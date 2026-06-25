@@ -148,8 +148,17 @@ function handleExport(password) {
   var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('RawData');
   var data = sheet.getDataRange().getValues();
 
-  // 返回 CSV 格式
-  var csv = data.map(function(row) { return row.join(','); }).join('\n');
+  function csvEscape(val) {
+    var s = String(val);
+    if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  var csv = data.map(function(row) {
+    return row.map(csvEscape).join(',');
+  }).join('\n');
 
   return ContentService.createTextOutput(csv)
     .setMimeType(ContentService.MimeType.CSV);

@@ -128,7 +128,7 @@
 
     <!-- Student list -->
     <div class="list-section">
-      <h2>需关注学生名单（PHQ-9 ≥ 10 或 GAD-7 ≥ 10）</h2>
+      <h2>需关注学生名单（PHQ-9 ≥ 10 或 GAD-7 ≥ 10 或 Q9 自伤风险）</h2>
       <table id="student-table">
         <thead><tr><th>学号</th><th>PHQ-9</th><th>PHQ-9 分级</th><th>GAD-7</th><th>GAD-7 分级</th><th>标记</th></tr></thead>
         <tbody id="student-tbody"><tr><td colspan="6">加载中...</td></tr></tbody>
@@ -270,9 +270,9 @@
         }
       });
 
-      // ---- Concerned students table (PHQ-9 >= 10 or GAD-7 >= 10) ----
+      // ---- Concerned students table (PHQ-9 >= 10 or GAD-7 >= 10 or Q9 flagged) ----
       var concerned = (d.list || []).filter(function(s) {
-        return s.phq9 >= 10 || s.gad7 >= 10;
+        return s.phq9 >= 10 || s.gad7 >= 10 || s.danger;
       }).sort(function(a, b) {
         return (b.phq9 + b.gad7) - (a.phq9 + a.gad7);
       });
