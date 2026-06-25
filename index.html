@@ -16,7 +16,10 @@
     max-width: 400px; width: 90%; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   }
   h1 { font-size: 24px; color: #E65100; margin-bottom: 8px; }
-  p { font-size: 14px; color: #888; margin-bottom: 32px; }
+  p { font-size: 14px; color: #888; margin-bottom: 10px; }
+  .qr-section { margin: 4px 0 12px; }
+  .qr-section img { width: 180px; height: 180px; border-radius: 12px; border: 2px solid #FFE0B2; }
+  .qr-hint { font-size: 12px; color: #999; margin: 6px 0 12px; }
   a {
     display: block; padding: 16px; margin: 12px 0; border-radius: 14px;
     text-decoration: none; font-size: 16px; font-weight: 600; transition: all 0.2s;
@@ -31,8 +34,19 @@
 <div class="card">
   <h1>☁️ 期末心理气象站</h1>
   <p>了解你的心情状态</p>
+  <div class="qr-section">
+    <img id="qr-img" src="" alt="扫码填写问卷">
+    <p class="qr-hint">📱 手机扫码填写问卷</p>
+  </div>
   <a href="student.html" class="btn-student">📝 我是学生，开始填写</a>
   <a href="dashboard.html" class="btn-teacher">📊 我是老师，查看报告</a>
 </div>
+<script>
+// 生成当前页面 student.html 的二维码
+var base = location.href.replace('index.html', '');
+var studentUrl = base + 'student.html';
+document.getElementById('qr-img').src =
+  'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(studentUrl);
+</script>
 </body>
 </html>
