@@ -3,47 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>期末心理气象站</title>
+<title>期末心理气象站 — 教师入口</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
-    background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+    background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
   }
   .card {
     background: #fff; border-radius: 24px; padding: 40px 32px;
     max-width: 400px; width: 90%; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   }
-  h1 { font-size: 24px; color: #E65100; margin-bottom: 8px; }
+  h1 { font-size: 24px; color: #1565C0; margin-bottom: 8px; }
   p { font-size: 14px; color: #888; margin-bottom: 10px; }
   .qr-section { margin: 4px 0 12px; }
-  .qr-section img { width: 180px; height: 180px; border-radius: 12px; border: 2px solid #FFE0B2; }
+  .qr-section img { width: 180px; height: 180px; border-radius: 12px; border: 2px solid #BBDEFB; }
   .qr-hint { font-size: 12px; color: #999; margin: 6px 0 12px; }
   a {
     display: block; padding: 16px; margin: 12px 0; border-radius: 14px;
     text-decoration: none; font-size: 16px; font-weight: 600; transition: all 0.2s;
   }
-  .btn-student { background: #FF9800; color: #fff; }
-  .btn-student:hover { background: #F57C00; }
-  .btn-teacher { background: #fff; color: #FF9800; border: 2px solid #FF9800; }
-  .btn-teacher:hover { background: #FFF3E0; }
+  .btn-teacher { background: #1565C0; color: #fff; }
+  .btn-teacher:hover { background: #0D47A1; }
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>☁️ 期末心理气象站</h1>
-  <p>学生入口 · 手机扫码填写问卷</p>
+  <h1>📊 期末心理气象站</h1>
+  <p>教师入口 · 扫码查看报告</p>
   <div class="qr-section">
-    <img id="qr-img" src="" alt="扫码填写问卷">
-    <p class="qr-hint">📱 手机扫码填写问卷</p>
+    <img id="qr-img" src="" alt="扫码查看报告">
+    <p class="qr-hint">📱 手机扫码进入仪表盘</p>
   </div>
-  <a href="student.html" class="btn-student">📝 开始填写问卷</a>
+  <a href="dashboard.html" class="btn-teacher">📊 进入教师仪表盘</a>
 </div>
 <script>
-var base = location.href.replace('index.html', '');
+var base = location.href.replace('teacher.html', '');
 document.getElementById('qr-img').src =
-  'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(base + 'student.html');
+  'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(base + 'dashboard.html');
 </script>
 </body>
 </html>

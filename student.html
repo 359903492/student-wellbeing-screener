@@ -279,7 +279,7 @@
 
     // ========== 提交 ==========
     function submitAnswers() {
-      var studentId = document.getElementById('student-id').value.trim();
+      var studentId = normalizeId(document.getElementById('student-id').value.trim());
       if (!studentId) { alert('请输入学号'); return; }
 
       document.getElementById('btn-submit').disabled = true;
@@ -296,26 +296,14 @@
         gad7_total: gad7_total
       };
 
-      // 先检查是否重复提交
+      // 显示成功页面
+      showResult();
+
+      // 读取 → 追加 → 写回
       fetch(API_URL)
         .then(function(r){ return r.json(); })
         .then(function(data){
           var subs = data.submissions || [];
-          var duplicate = subs.some(function(s){ return s.studentId === studentId; });
-
-          if (duplicate) {
-            var ok = confirm('⚠ 学号 ' + studentId + ' 已经提交过问卷，确定要再次提交吗？');
-            if (!ok) {
-              document.getElementById('btn-submit').disabled = false;
-              document.getElementById('btn-submit').textContent = '提交问卷';
-              return;
-            }
-          }
-
-          // 显示成功页面
-          showResult();
-
-          // 追加并保存
           subs.push(record);
           return fetch(API_URL, {
             method: 'PUT',
@@ -323,9 +311,27 @@
             body: JSON.stringify({submissions: subs})
           });
         })
-        .catch(function(){
-          // 网络错误也显示成功（后台保存失败了不影响用户体验）
-        });
+        .catch(function(){ /* 后台保存失败不影响 */ });
+    }
+
+    // ========== 学号正规化 ==========
+    function normalizeId(id) {
+      // 去掉前后空格，去掉前导零，"0001" → "1", "001" → "1"
+      return String(id).trim().replace(/^0+/, '') || '0';
+    }
+
+    function checkDuplicate(studentId, callback) {
+      // 检查学号是否已存在（使用正规化后的ID比较）
+      fetch(API_URL)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var subs = data.submissions || [];
+          var dup = subs.some(function(s){
+            return normalizeId(s.studentId) === normalizeId(studentId);
+          });
+          callback(dup);
+        })
+        .catch(function(){ callback(false); }); // 网络错误不阻止
     }
 
     // ========== 初始化 ==========
@@ -335,12 +341,19 @@
         document.getElementById('btn-start').disabled = this.value.trim() === '';
       });
 
-      // 开始按钮
+      // 开始按钮 — 检查重复后弹出警告
       document.getElementById('btn-start').addEventListener('click', function() {
-        if (document.getElementById('student-id').value.trim()) {
+        var rawId = document.getElementById('student-id').value.trim();
+        if (!rawId) return;
+
+        checkDuplicate(rawId, function(isDup) {
+          if (isDup) {
+            var ok = confirm('⚠ 学号 ' + normalizeId(rawId) + ' 已经提交过问卷！\n\n确定要再次填写并提交吗？');
+            if (!ok) return;
+          }
           showScreen('screen-questions');
           renderQuestion(0);
-        }
+        });
       });
 
       // 提交按钮
