@@ -67,7 +67,9 @@
       "Read(//tmp/**)",
       "Bash(tar -czf /tmp/deploy-v2.tar.gz student.html dashboard.html index.html)",
       "Read(//d/tmp/**)",
-      "Read(//d//**)"
+      "Read(//d//**)",
+      "Bash(git rm *)",
+      "Bash(git reset *)"
     ]
   }
 }
