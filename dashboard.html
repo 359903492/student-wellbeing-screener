@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教师仪表盘 — 心理气象站</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
+      background: #F5F7FA; color: #333; min-height: 100vh;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+    /* Login */
+    .login-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .login-box {
+      background: #FFF; border-radius: 16px; padding: 32px; width: 320px; text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    }
+    .login-box h2 { margin-bottom: 16px; font-size: 20px; }
+    .login-box input {
+      width: 100%; padding: 12px; border: 2px solid #E0E0E0; border-radius: 10px;
+      font-size: 16px; text-align: center; margin-bottom: 12px; outline: none;
+    }
+    .login-box input:focus { border-color: #FF9800; }
+    .login-box button {
+      width: 100%; padding: 12px; background: #FF9800; color: #FFF; border: none;
+      border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Header */
+    .header {
+      background: #FFF; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    .header h1 { font-size: 22px; }
+    .header .meta { font-size: 13px; color: #888; }
+
+    /* Overview cards */
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+      background: #FFF; border-radius: 12px; padding: 20px; text-align: center;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    .stat-card .count { font-size: 36px; font-weight: 700; margin: 4px 0; }
+    .stat-card .label { font-size: 13px; color: #888; }
+    .stat-card .pct { font-size: 12px; color: #AAA; margin-top: 2px; }
+    .stat-card.good .count { color: #4CAF50; }
+    .stat-card.mild .count { color: #FFC107; }
+    .stat-card.moderate .count { color: #FF9800; }
+    .stat-card.severe .count { color: #F44336; }
+
+    /* Chart */
+    .chart-section {
+      background: #FFF; border-radius: 12px; padding: 24px; margin-bottom: 24px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    .chart-section h2 { font-size: 18px; margin-bottom: 16px; }
+
+    /* Student list */
+    .list-section {
+      background: #FFF; border-radius: 12px; padding: 24px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    .list-section h2 { font-size: 18px; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 10px 12px; font-size: 12px; color: #888; border-bottom: 2px solid #F0F0F0; }
+    td { padding: 10px 12px; font-size: 14px; border-bottom: 1px solid #F5F5F5; }
+    tr.danger { background: #FFF5F5; }
+    tr.danger td:first-child::before { content: '⚠ '; }
+
+    /* Buttons */
+    .btn-row { display: flex; gap: 12px; margin-bottom: 20px; }
+    .btn {
+      padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none;
+    }
+    .btn-primary { background: #FF9800; color: #FFF; }
+    .btn-outline { background: #FFF; color: #FF9800; border: 2px solid #FF9800; }
+
+    .disclaimer { font-size: 11px; color: #999; text-align: center; margin-top: 24px; padding: 16px; }
+    .error-msg { color: #F44336; font-size: 13px; margin-top: 8px; display: none; }
+
+    .refresh-time { font-size: 12px; color: #AAA; text-align: right; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <!-- Login overlay -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-box">
+      <h2>教师登录</h2>
+      <input type="password" id="password-input" placeholder="请输入密码" autofocus>
+      <p class="error-msg" id="login-error">密码错误</p>
+      <button onclick="login()">进入仪表盘</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <h1>期末心理气象站 — 全年级报告</h1>
+        <div class="meta" id="header-meta">加载中...</div>
+      </div>
+      <div class="btn-row" style="margin-bottom:0;">
+        <button class="btn btn-outline" onclick="refreshData()">刷新</button>
+        <button class="btn btn-primary" onclick="exportExcel()">导出 Excel</button>
+      </div>
+    </div>
+
+    <!-- Overview cards -->
+    <div class="cards" id="cards-container">
+      <div class="stat-card"><p>加载中...</p></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-section">
+      <h2>分级分布</h2>
+      <canvas id="level-chart" height="80"></canvas>
+    </div>
+
+    <!-- Student list -->
+    <div class="list-section">
+      <h2>需关注学生名单（PHQ-9 ≥ 10 或 GAD-7 ≥ 10）</h2>
+      <table id="student-table">
+        <thead><tr><th>学号</th><th>PHQ-9</th><th>PHQ-9 分级</th><th>GAD-7</th><th>GAD-7 分级</th><th>标记</th></tr></thead>
+        <tbody id="student-tbody"><tr><td colspan="6">加载中...</td></tr></tbody>
+      </table>
+    </div>
+
+    <p class="disclaimer">本问卷为筛查工具，非临床诊断。PHQ-9 第 9 题得分 ≥ 1 的学生已标注为红色，建议立即跟进。</p>
+    <p class="refresh-time" id="refresh-time"></p>
+  </div>
+
+  <script>
+    // =========================================================================
+    // Task 4: Teacher Dashboard — Password Login, Overview Cards, Chart.js,
+    //         Concerned Students Table, Auto-refresh, Excel Export
+    // =========================================================================
+
+    var API_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // Replace on deployment
+    var PASSWORD = '';
+    var currentData = null;
+    var autoRefreshTimer = null;
+
+    // -------------------------------------------------------------------------
+    // Step 2: Password verification & data fetching
+    // -------------------------------------------------------------------------
+
+    function login() {
+      PASSWORD = document.getElementById('password-input').value;
+      document.getElementById('login-error').style.display = 'none';
+
+      fetch(API_URL + '?action=stats&password=' + encodeURIComponent(PASSWORD))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.error) {
+            document.getElementById('login-error').style.display = 'block';
+          } else {
+            document.getElementById('login-overlay').style.display = 'none';
+            currentData = data;
+            renderDashboard();
+            startAutoRefresh();
+          }
+        })
+        .catch(function() {
+          document.getElementById('login-error').textContent = '网络错误，请重试';
+          document.getElementById('login-error').style.display = 'block';
+        });
+    }
+
+    // Enter key triggers login
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('password-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') login();
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // Auto-refresh every 5 minutes
+    // -------------------------------------------------------------------------
+
+    function startAutoRefresh() {
+      if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+      autoRefreshTimer = setInterval(refreshData, 5 * 60 * 1000);
+    }
+
+    function refreshData() {
+      fetch(API_URL + '?action=stats&password=' + encodeURIComponent(PASSWORD))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.error) {
+            currentData = data;
+            renderDashboard();
+          }
+        })
+        .catch(function() {
+          // Silently fail on auto-refresh; keep showing last data
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Step 3: Overview cards & chart rendering
+    // -------------------------------------------------------------------------
+
+    function renderDashboard() {
+      var d = currentData;
+      document.getElementById('header-meta').textContent =
+        '已提交：' + d.total + ' 人  |  最后更新：' + new Date().toLocaleString('zh-CN');
+
+      var total = d.total || 1; // Prevent division by zero
+      var levels = d.levels;
+
+      // ---- Overview cards ----
+      document.getElementById('cards-container').innerHTML =
+        '<div class="stat-card good">' +
+        '<div class="count">' + levels.good + '</div>' +
+        '<div class="label">状态良好</div>' +
+        '<div class="pct">' + (levels.good / total * 100).toFixed(1) + '%</div>' +
+        '</div>' +
+        '<div class="stat-card mild">' +
+        '<div class="count">' + levels.mild + '</div>' +
+        '<div class="label">轻度压力</div>' +
+        '<div class="pct">' + (levels.mild / total * 100).toFixed(1) + '%</div>' +
+        '</div>' +
+        '<div class="stat-card moderate">' +
+        '<div class="count">' + levels.moderate + '</div>' +
+        '<div class="label">中度倾向</div>' +
+        '<div class="pct">' + (levels.moderate / total * 100).toFixed(1) + '%</div>' +
+        '</div>' +
+        '<div class="stat-card severe">' +
+        '<div class="count">' + levels.severe + '</div>' +
+        '<div class="label">中重度以上</div>' +
+        '<div class="pct">' + (levels.severe / total * 100).toFixed(1) + '%</div>' +
+        '</div>';
+
+      // ---- Chart.js stacked bar chart ----
+      var ctx = document.getElementById('level-chart').getContext('2d');
+      if (window._chart) window._chart.destroy();
+      window._chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['全年级'],
+          datasets: [
+            { label: '良好', data: [levels.good], backgroundColor: '#4CAF50' },
+            { label: '轻度', data: [levels.mild], backgroundColor: '#FFC107' },
+            { label: '中度', data: [levels.moderate], backgroundColor: '#FF9800' },
+            { label: '中重度+', data: [levels.severe], backgroundColor: '#F44336' },
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true, title: { display: true, text: '人数' } }
+          }
+        }
+      });
+
+      // ---- Concerned students table (PHQ-9 >= 10 or GAD-7 >= 10) ----
+      var concerned = (d.list || []).filter(function(s) {
+        return s.phq9 >= 10 || s.gad7 >= 10;
+      }).sort(function(a, b) {
+        return (b.phq9 + b.gad7) - (a.phq9 + a.gad7);
+      });
+
+      var tbodyHTML = '';
+      if (concerned.length === 0) {
+        tbodyHTML = '<tr><td colspan="6" style="text-align:center;color:#888;">没有需要特别关注的学生</td></tr>';
+      } else {
+        concerned.forEach(function(s) {
+          var dangerClass = s.danger ? ' class="danger"' : '';
+          var note = s.danger ? '⚠ 需立即关注' : '建议约谈';
+          tbodyHTML += '<tr' + dangerClass + '>' +
+            '<td>' + s.studentId + '</td>' +
+            '<td><strong>' + s.phq9 + '</strong></td>' +
+            '<td>' + s.phq9_level + '</td>' +
+            '<td><strong>' + s.gad7 + '</strong></td>' +
+            '<td>' + s.gad7_level + '</td>' +
+            '<td>' + note + '</td>' +
+            '</tr>';
+        });
+      }
+      document.getElementById('student-tbody').innerHTML = tbodyHTML;
+
+      document.getElementById('refresh-time').textContent = '最后更新：' + new Date().toLocaleString('zh-CN');
+    }
+
+    // -------------------------------------------------------------------------
+    // Step 4: Excel export via SheetJS
+    // -------------------------------------------------------------------------
+
+    function exportExcel() {
+      if (!currentData || !currentData.list) {
+        alert('暂无数据可导出');
+        return;
+      }
+
+      // Build export data with headers
+      var exportData = [['学号', 'PHQ-9 总分', 'PHQ-9 分级', 'GAD-7 总分', 'GAD-7 分级', '安全标记']];
+
+      currentData.list.forEach(function(s) {
+        exportData.push([
+          s.studentId,
+          s.phq9,
+          s.phq9_level,
+          s.gad7,
+          s.gad7_level,
+          s.danger ? '是（第9题≥1）' : '否'
+        ]);
+      });
+
+      var ws = XLSX.utils.aoa_to_sheet(exportData);
+      ws['!cols'] = [
+        { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 18 }
+      ];
+
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '心理健康筛查');
+      XLSX.writeFile(wb, '心理气象站_筛查报告_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    }
+  </script>
+</body>
+</html>
