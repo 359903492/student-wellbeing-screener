@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>期末心理气象站</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  }
+  .card {
+    background: #fff; border-radius: 24px; padding: 40px 32px;
+    max-width: 400px; width: 90%; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  h1 { font-size: 24px; color: #E65100; margin-bottom: 8px; }
+  p { font-size: 14px; color: #888; margin-bottom: 32px; }
+  a {
+    display: block; padding: 16px; margin: 12px 0; border-radius: 14px;
+    text-decoration: none; font-size: 16px; font-weight: 600; transition: all 0.2s;
+  }
+  .btn-student { background: #FF9800; color: #fff; }
+  .btn-student:hover { background: #F57C00; }
+  .btn-teacher { background: #fff; color: #FF9800; border: 2px solid #FF9800; }
+  .btn-teacher:hover { background: #FFF3E0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>☁️ 期末心理气象站</h1>
+  <p>了解你的心情状态</p>
+  <a href="student.html" class="btn-student">📝 我是学生，开始填写</a>
+  <a href="dashboard.html" class="btn-teacher">📊 我是老师，查看报告</a>
+</div>
+</body>
+</html>
