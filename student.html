@@ -75,7 +75,7 @@
       height: 12px; border-radius: 6px; background: #EEE; margin: 8px 0 4px; overflow: hidden;
     }
     .meter-fill { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
-    .meter-fill.low { background: #4CAF50; }
+    .meter-fill.good { background: #4CAF50; }
     .meter-fill.mild { background: #FFC107; }
     .meter-fill.moderate { background: #FF9800; }
     .meter-fill.severe { background: #F44336; }
@@ -141,7 +141,222 @@
   </div>
 
   <script>
-    // JS logic in Task 3
+    // ========== 配置 ==========
+    const API_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // 部署时替换
+
+    // PHQ-9 + GAD-7 题目
+    const QUESTIONS = {
+      phq9: [
+        { id: 'phq9_1', text: '做事时提不起劲或没有兴趣', section: 'PHQ-9 情绪状态' },
+        { id: 'phq9_2', text: '感到心情低落、沮喪或绝望', section: 'PHQ-9 情绪状态' },
+        { id: 'phq9_3', text: '入睡困难、睡不安稳或睡得太多', section: 'PHQ-9 情绪状态' },
+        { id: 'phq9_4', text: '感觉疲倦或没有活力', section: 'PHQ-9 情绪状态' },
+        { id: 'phq9_5', text: '食欲不振或吃太多', section: 'PHQ-9 情绪状态' },
+        { id: 'phq9_6', text: '觉得自己很糟——或觉得自己很失败，或让自己或家人失望', section: 'PHQ-9 情绪状态' },
+        { id: 'phq9_7', text: '对事物专注有困难，例如阅读或看电视时', section: 'PHQ-9 情绪状态' },
+        { id: 'phq9_8', text: '动作或说话速度缓慢到别人已经觉察——或正好相反，烦躁或坐立不安、动来动去的情况更胜于平常', section: 'PHQ-9 情绪状态' },
+        { id: 'phq9_9', text: '有不如死掉或用某种方式伤害自己的念头', section: 'PHQ-9 情绪状态' },
+      ],
+      gad7: [
+        { id: 'gad7_1', text: '感觉紧张、焦虑或急切', section: 'GAD-7 焦虑状态' },
+        { id: 'gad7_2', text: '不能停止或控制担忧', section: 'GAD-7 焦虑状态' },
+        { id: 'gad7_3', text: '对各种各样的事情担忧过多', section: 'GAD-7 焦虑状态' },
+        { id: 'gad7_4', text: '很难放松下来', section: 'GAD-7 焦虑状态' },
+        { id: 'gad7_5', text: '由于不安而无法静坐', section: 'GAD-7 焦虑状态' },
+        { id: 'gad7_6', text: '变得容易烦恼或急躁', section: 'GAD-7 焦虑状态' },
+        { id: 'gad7_7', text: '感到似乎將有可怕的事情发生而害怕', section: 'GAD-7 焦虑状态' },
+      ]
+    };
+
+    const OPTIONS = [
+      { value: 0, label: '完全不会' },
+      { value: 1, label: '好几天' },
+      { value: 2, label: '一半以上天数' },
+      { value: 3, label: '几乎每天' },
+    ];
+
+    // 合并所有题目
+    const ALL_QUESTIONS = [
+      ...QUESTIONS.phq9.map(function(q) { return Object.assign({}, q, { group: 'phq9' }); }),
+      ...QUESTIONS.gad7.map(function(q) { return Object.assign({}, q, { group: 'gad7' }); }),
+    ];
+
+    var answers = {}; // { phq9_1: 0, phq9_2: 1, ... }
+    var currentQuestion = 0;
+
+    // ========== 屏幕切换 ==========
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+    }
+
+    // ========== 题目渲染 ==========
+    function renderQuestion(index) {
+      if (index >= ALL_QUESTIONS.length) {
+        document.getElementById('btn-submit').style.display = 'block';
+        document.getElementById('questions-container').innerHTML =
+          '<div class="card" style="text-align:center;"><h2>✅ 所有题目已完成</h2><p style="margin-top:8px;color:#888;">请点击下方「提交问卷」</p></div>';
+        return;
+      }
+
+      var q = ALL_QUESTIONS[index];
+      var progress = Math.round((index / ALL_QUESTIONS.length) * 100);
+      document.getElementById('progress-fill').style.width = progress + '%';
+
+      // Section header (只在每个 section 第一题显示)
+      var sectionHeader = '';
+      if (index === 0 || ALL_QUESTIONS[index - 1].section !== q.section) {
+        sectionHeader = '<div class="section-title">' + q.section + '</div>';
+      }
+
+      var optionsHTML = OPTIONS.map(function(opt) {
+        var selectedClass = answers[q.id] === opt.value ? ' selected' : '';
+        return '<div class="option' + selectedClass + '" data-value="' + opt.value + '" data-qid="' + q.id + '" data-next="' + (index + 1) + '">' + opt.label + '</div>';
+      }).join('');
+
+      var html = sectionHeader +
+        '<div class="question-card">' +
+        '<div class="q-num">第 ' + (index + 1) + ' / ' + ALL_QUESTIONS.length + ' 题</div>' +
+        '<div class="q-text">' + q.text + '</div>' +
+        '<div class="options">' + optionsHTML + '</div>' +
+        '</div>';
+
+      document.getElementById('questions-container').innerHTML = html;
+
+      // 绑定选项点击事件
+      document.querySelectorAll('.option').forEach(function(opt) {
+        opt.addEventListener('click', function() {
+          var qid = this.dataset.qid;
+          var value = parseInt(this.dataset.value);
+          var next = parseInt(this.dataset.next);
+
+          answers[qid] = value;
+
+          // 更新选中样式
+          this.parentElement.querySelectorAll('.option').forEach(function(o) { o.classList.remove('selected'); });
+          this.classList.add('selected');
+
+          // 自动跳转到下一题（延迟 300ms 让用户看到选中效果）
+          setTimeout(function() {
+            currentQuestion = next;
+            renderQuestion(next);
+            window.scrollTo(0, 0);
+          }, 300);
+        });
+      });
+    }
+
+    // ========== 答案收集 ==========
+    function collectAnswers() {
+      var phq9 = QUESTIONS.phq9.map(function(q) { return answers[q.id] || 0; });
+      var gad7 = QUESTIONS.gad7.map(function(q) { return answers[q.id] || 0; });
+      return { phq9: phq9, gad7: gad7 };
+    }
+
+    // ========== 评分等级 ==========
+    function getPHQ9Level(score) {
+      if (score <= 4) return { level: 'good', label: '正常范围' };
+      if (score <= 9) return { level: 'mild', label: '轻度抑郁倾向' };
+      if (score <= 14) return { level: 'moderate', label: '中度抑郁倾向' };
+      if (score <= 19) return { level: 'severe', label: '中重度抑郁倾向' };
+      return { level: 'severe', label: '重度抑郁倾向' };
+    }
+
+    function getGAD7Level(score) {
+      if (score <= 4) return { level: 'good', label: '正常范围' };
+      if (score <= 9) return { level: 'mild', label: '轻度焦虑' };
+      if (score <= 14) return { level: 'moderate', label: '中度焦虑' };
+      return { level: 'severe', label: '重度焦虑' };
+    }
+
+    // ========== 结果展示 ==========
+    function showResult(phq9Total, phq9Level, gad7Total, gad7Level) {
+      var maxPHQ9 = 27, maxGAD7 = 21;
+      var phq9Pct = Math.round((phq9Total / maxPHQ9) * 100);
+      var gad7Pct = Math.round((gad7Total / maxGAD7) * 100);
+
+      var html =
+        '<div class="card" style="text-align:center;">' +
+        '<h2>😌 抑郁情绪温度</h2>' +
+        '<div style="font-size:36px;font-weight:700;color:#333;margin:8px 0;">' + phq9Total + ' / ' + maxPHQ9 + '</div>' +
+        '<span class="level-badge ' + phq9Level.level + '">' + phq9Level.label + '</span>' +
+        '<div class="meter-bar"><div class="meter-fill ' + phq9Level.level + '" style="width:' + phq9Pct + '%"></div></div>' +
+        '</div>' +
+
+        '<div class="card" style="text-align:center;">' +
+        '<h2>😰 焦虑情绪温度</h2>' +
+        '<div style="font-size:36px;font-weight:700;color:#333;margin:8px 0;">' + gad7Total + ' / ' + maxGAD7 + '</div>' +
+        '<span class="level-badge ' + gad7Level.level + '">' + gad7Level.label + '</span>' +
+        '<div class="meter-bar"><div class="meter-fill ' + gad7Level.level + '" style="width:' + gad7Pct + '%"></div></div>' +
+        '</div>';
+
+      // 如果有风险，显示额外提示
+      if (phq9Level.level === 'severe' || gad7Level.level === 'severe') {
+        html += '<div class="card" style="background:#FFF3E0;text-align:center;">' +
+          '<p style="font-size:15px;color:#E65100;">💛 你的分数显示你可能正在经历一些困难。</p>' +
+          '<p style="font-size:13px;color:#BF360C;margin-top:8px;">建议找班主任聊聊，或者联系学校心理老师。你不是一个人在面对这些。</p>' +
+          '</div>';
+      }
+
+      document.getElementById('result-content').innerHTML = html;
+      showScreen('screen-result');
+    }
+
+    // ========== 提交 ==========
+    function submitAnswers() {
+      var studentId = document.getElementById('student-id').value.trim();
+      if (!studentId) { alert('请输入学号'); return; }
+
+      document.getElementById('btn-submit').disabled = true;
+      document.getElementById('btn-submit').textContent = '提交中...';
+
+      var answers = collectAnswers();
+
+      fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'submit',
+          studentId: studentId,
+          phq9: answers.phq9,
+          gad7: answers.gad7
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          showResult(data.phq9_total, getPHQ9Level(data.phq9_total),
+                     data.gad7_total, getGAD7Level(data.gad7_total));
+        } else {
+          alert('提交失败，请重试');
+          document.getElementById('btn-submit').disabled = false;
+          document.getElementById('btn-submit').textContent = '提交问卷';
+        }
+      })
+      .catch(function() {
+        alert('网络错误，请检查网络后重试');
+        document.getElementById('btn-submit').disabled = false;
+        document.getElementById('btn-submit').textContent = '提交问卷';
+      });
+    }
+
+    // ========== 初始化 ==========
+    document.addEventListener('DOMContentLoaded', function() {
+      // 学号输入监听——启用开始按钮
+      document.getElementById('student-id').addEventListener('input', function() {
+        document.getElementById('btn-start').disabled = this.value.trim() === '';
+      });
+
+      // 开始按钮
+      document.getElementById('btn-start').addEventListener('click', function() {
+        if (document.getElementById('student-id').value.trim()) {
+          showScreen('screen-questions');
+          renderQuestion(0);
+        }
+      });
+
+      // 提交按钮
+      document.getElementById('btn-submit').addEventListener('click', submitAnswers);
+    });
   </script>
 </body>
 </html>
