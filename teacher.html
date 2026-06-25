@@ -18,7 +18,7 @@
   h1 { font-size: 24px; color: #1565C0; margin-bottom: 8px; }
   p { font-size: 14px; color: #888; margin-bottom: 10px; }
   .qr-section { margin: 4px 0 12px; }
-  .qr-section img { width: 180px; height: 180px; border-radius: 12px; border: 2px solid #BBDEFB; }
+  .qr-section img { max-width: 100%; width: 180px; height: auto; border-radius: 12px; border: 2px solid #BBDEFB; }
   .qr-hint { font-size: 12px; color: #999; margin: 6px 0 12px; }
   a {
     display: block; padding: 16px; margin: 12px 0; border-radius: 14px;
@@ -26,6 +26,13 @@
   }
   .btn-teacher { background: #1565C0; color: #fff; }
   .btn-teacher:hover { background: #0D47A1; }
+
+  @media (max-width: 400px) {
+    .card { padding: 24px 16px; border-radius: 16px; }
+    h1 { font-size: 20px; }
+    .qr-section img { width: 150px; }
+    a { padding: 14px; font-size: 15px; }
+  }
 </style>
 </head>
 <body>
