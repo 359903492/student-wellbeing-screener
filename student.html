@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>期末心理气象站 ☁️</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #FFF3E0, #FFE0B2, #FFCC80);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px 0 60px;
+    }
+    .container { width: 100%; max-width: 420px; padding: 0 16px; }
+    .header { text-align: center; padding: 30px 0 20px; }
+    .header h1 { font-size: 24px; color: #E65100; margin-bottom: 6px; }
+    .header p { font-size: 13px; color: #BF360C; opacity: 0.8; }
+
+    /* Screen management */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Consent card */
+    .card {
+      background: #FFFFFF; border-radius: 16px; padding: 24px 20px;
+      margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .card h2 { font-size: 17px; color: #333; margin-bottom: 12px; }
+    .card p { font-size: 14px; color: #666; line-height: 1.7; }
+
+    /* Input */
+    .input-group { margin-bottom: 16px; }
+    .input-group label { display: block; font-size: 14px; color: #555; margin-bottom: 6px; font-weight: 500; }
+    .input-group input {
+      width: 100%; padding: 12px 16px; border: 2px solid #FFE0B2;
+      border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s;
+    }
+    .input-group input:focus { border-color: #FF9800; }
+
+    /* Question card */
+    .question-card {
+      background: #FFFFFF; border-radius: 16px; padding: 20px;
+      margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .question-card .q-num { font-size: 12px; color: #FF9800; font-weight: 600; margin-bottom: 4px; }
+    .question-card .q-text { font-size: 15px; color: #333; line-height: 1.5; margin-bottom: 14px; }
+
+    /* Options */
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option {
+      padding: 12px 16px; border: 2px solid #F5F5F5; border-radius: 12px;
+      font-size: 14px; color: #555; cursor: pointer; transition: all 0.2s;
+      text-align: center; background: #FAFAFA;
+    }
+    .option:hover { border-color: #FFB74D; background: #FFF8E1; }
+    .option.selected { border-color: #FF9800; background: #FFF3E0; color: #E65100; font-weight: 600; }
+
+    /* Buttons */
+    .btn {
+      display: block; width: 100%; padding: 14px; border: none; border-radius: 14px;
+      font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+      text-align: center;
+    }
+    .btn-primary { background: #FF9800; color: #FFF; margin-top: 8px; }
+    .btn-primary:hover { background: #F57C00; }
+    .btn-primary:disabled { background: #CCC; cursor: not-allowed; }
+    .btn-outline { background: #FFF; color: #FF9800; border: 2px solid #FF9800; }
+
+    /* Result */
+    .meter-bar {
+      height: 12px; border-radius: 6px; background: #EEE; margin: 8px 0 4px; overflow: hidden;
+    }
+    .meter-fill { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
+    .meter-fill.low { background: #4CAF50; }
+    .meter-fill.mild { background: #FFC107; }
+    .meter-fill.moderate { background: #FF9800; }
+    .meter-fill.severe { background: #F44336; }
+
+    .level-badge {
+      display: inline-block; padding: 4px 14px; border-radius: 20px;
+      font-size: 14px; font-weight: 600;
+    }
+    .level-badge.good { background: #E8F5E9; color: #2E7D32; }
+    .level-badge.mild { background: #FFF8E1; color: #F57F17; }
+    .level-badge.moderate { background: #FFF3E0; color: #E65100; }
+    .level-badge.severe { background: #FFEBEE; color: #C62828; }
+
+    .disclaimer { font-size: 11px; color: #999; text-align: center; margin-top: 16px; line-height: 1.6; }
+
+    /* Progress bar */
+    .progress-bar {
+      height: 4px; background: #FFE0B2; border-radius: 2px; margin-bottom: 16px; overflow: hidden;
+    }
+    .progress-fill { height: 100%; background: #FF9800; border-radius: 2px; transition: width 0.3s; }
+
+    .section-title {
+      font-size: 18px; color: #E65100; text-align: center; margin: 16px 0 12px; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <!-- Screen 1: Consent -->
+    <div class="screen active" id="screen-consent">
+      <div class="header">
+        <h1>☁️ 期末心理气象站</h1>
+        <p>了解你的心情状态，帮你更好地度过期末</p>
+      </div>
+      <div class="card">
+        <h2>📋 知情同意</h2>
+        <p>亲爱的同学：这份问卷帮助老师了解大家在期末阶段的情绪状态。你的回答只有班主任可见，<strong>不会影响任何成绩</strong>。请根据最近两周的真实感受作答。如果填完后觉得心情不好，随时可以找老师聊聊。</p>
+      </div>
+      <div class="card">
+        <div class="input-group">
+          <label>请输入你的学号</label>
+          <input type="text" id="student-id" placeholder="例如：20240101" maxlength="20">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-start" disabled>开始填写</button>
+      <p class="disclaimer">⚠ 本问卷为筛查工具，非临床诊断</p>
+    </div>
+
+    <!-- Screen 2: Questions -->
+    <div class="screen" id="screen-questions">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div id="questions-container"></div>
+      <button class="btn btn-primary" id="btn-submit" style="display:none;">提交问卷</button>
+    </div>
+
+    <!-- Screen 3: Result -->
+    <div class="screen" id="screen-result">
+      <div class="header"><h1>☁️ 你的情绪温度</h1></div>
+      <div id="result-content"></div>
+      <p class="disclaimer">⚠ 本问卷为筛查工具，非临床诊断。<br>如果分数偏低，建议找班主任或学校心理老师聊聊。</p>
+      <button class="btn btn-outline" id="btn-retry" style="margin-top:12px;" onclick="location.reload()">重新填写</button>
+    </div>
+  </div>
+
+  <script>
+    // JS logic in Task 3
+  </script>
+</body>
+</html>
