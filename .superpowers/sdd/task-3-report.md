@@ -55,3 +55,32 @@ Full trace-through of the complete user flow passed:
 - Results display with temperature meters, level badges, and disclaimer
 - Severe results show additional warning with help resources
 - All scoring thresholds verified against requirements
+
+## Fix applied (2026-06-25): PHQ-9 Q9 self-harm warning always shows
+
+### Issue
+PHQ-9 question 9 (self-harm: "有不如死掉或用某种方式伤害自己的念头") score >= 1 must show an extra warning card in the results screen, regardless of total severity level. Previously the warning only showed when total level was 'severe'.
+
+### Changes made (commit ead0499)
+
+1. **`showResult` signature** -- added `phq9Q9Score` as the fifth parameter:
+   ```
+   function showResult(phq9Total, phq9Level, gad7Total, gad7Level, phq9Q9Score)
+   ```
+
+2. **Q9 safety check** -- inserted after the two temperature meter cards and before the existing severe-level check:
+   ```javascript
+   if (phq9Q9Score >= 1) {
+     html += '<div class="card" style="background:#FFF5F5;border:2px solid #FFCDD2;text-align:center;">' +
+       '<p style="font-size:15px;color:#C62828;">💛 你的回答中有一项引起了我们的关注。</p>' +
+       '<p style="font-size:13px;color:#C62828;margin-top:8px;">请务必找班主任或学校心理老师聊一聊。你很重要，有人愿意帮你。</p>' +
+       '</div>';
+   }
+   ```
+   This card uses a distinct red-tinted style (`#FFF5F5` background, `#FFCDD2` border, `#C62828` text) to differentiate it from the generic severe-level warning (`#FFF3E0` background).
+
+3. **Submit callback** -- passes `answers.phq9[8] || 0` as the fifth argument to `showResult()`. The `answers` variable is already in the closure scope from the enclosing `submitAnswers()` function, so no additional data plumbing is needed.
+
+### Verification
+- JavaScript syntax validated with `new Function()` -- no parse errors
+- Both warning cards are independent: the Q9 safety card triggers on `phq9Q9Score >= 1`; the severe-level card triggers on `phq9Level.level === 'severe' || gad7Level.level === 'severe'`. They can appear together or separately.
