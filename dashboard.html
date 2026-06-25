@@ -144,8 +144,8 @@
     <div class="list-section">
       <h2>需关注学生名单（PHQ-8 ≥ 10 或 GAD-7 ≥ 10）</h2>
       <table id="student-table">
-        <thead><tr><th>学号</th><th>PHQ-8</th><th>PHQ-8 分级</th><th>GAD-7</th><th>GAD-7 分级</th></tr></thead>
-        <tbody id="student-tbody"><tr><td colspan="5">加载中...</td></tr></tbody>
+        <thead><tr><th>学号</th><th>PHQ-8</th><th>PHQ-8 分级</th><th>GAD-7</th><th>GAD-7 分级</th><th>提交时间</th></tr></thead>
+        <tbody id="student-tbody"><tr><td colspan="6">加载中...</td></tr></tbody>
       </table>
     </div>
 
@@ -253,12 +253,15 @@
           var list = subs.map(function(s) {
             var phq9_total = parseInt(s.phq9_total) || 0;
             var gad7_total = parseInt(s.gad7_total) || 0;
+            var ts = s.timestamp || '';
+            if (ts) { ts = ts.replace('T', ' ').slice(0, 19); }
             return {
               studentId: s.studentId || '?',
               phq9: phq9_total,
               phq9_level: getPHQ9Label(phq9_total),
               gad7: gad7_total,
-              gad7_level: getGAD7Label(gad7_total)
+              gad7_level: getGAD7Label(gad7_total),
+              timestamp: ts
             };
           });
 
@@ -365,7 +368,7 @@
 
       var tbodyHTML = '';
       if (concerned.length === 0) {
-        tbodyHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">没有需要特别关注的学生</td></tr>';
+        tbodyHTML = '<tr><td colspan="6" style="text-align:center;color:#888;">没有需要特别关注的学生</td></tr>';
       } else {
         concerned.forEach(function(s) {
           tbodyHTML += '<tr>' +
@@ -374,6 +377,7 @@
             '<td>' + esc(s.phq9_level) + '</td>' +
             '<td><strong>' + s.gad7 + '</strong></td>' +
             '<td>' + esc(s.gad7_level) + '</td>' +
+            '<td style="font-size:11px;color:#999;">' + (s.timestamp || '-') + '</td>' +
             '</tr>';
         });
       }
@@ -393,7 +397,7 @@
       }
 
       // Build export data with headers
-      var exportData = [['学号', 'PHQ-8 总分', 'PHQ-8 分级', 'GAD-7 总分', 'GAD-7 分级']];
+      var exportData = [['学号', 'PHQ-8 总分', 'PHQ-8 分级', 'GAD-7 总分', 'GAD-7 分级', '提交时间']];
 
       currentData.list.forEach(function(s) {
         exportData.push([
@@ -401,13 +405,14 @@
           s.phq9,
           s.phq9_level,
           s.gad7,
-          s.gad7_level
+          s.gad7_level,
+          s.timestamp || ''
         ]);
       });
 
       var ws = XLSX.utils.aoa_to_sheet(exportData);
       ws['!cols'] = [
-        { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 12 }, { wch: 18 }
+        { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 20 }
       ];
 
       var wb = XLSX.utils.book_new();
@@ -477,6 +482,7 @@
         <li>修改密码后自动同步到云端，更换设备也能使用新密码</li>
         <li>如果云端同步失败，本机密码仍生效；刷新页面后优先使用云端密码</li>
         <li>量表来源：PHQ-8（患者健康问卷-8）+ GAD-7（广泛性焦虑量表-7），均经过中国青少年群体信效度验证</li>
+        <li><strong>学号重复处理</strong>：同一学号可多次提交。点击「开始填写」时会弹窗提示"该学号已提交过"，学生可选择继续或取消。允许重复提交意味着学生可以更新自己的问卷结果（比如隔一周重测），<strong>导出 Excel 时会保留每次提交的记录</strong>（含提交时间），方便追踪变化趋势</li>
       </ul>
 
       <h3 style="font-size:15px;color:#E65100;margin:20px 0 8px;">🖥 部署与维护</h3>
