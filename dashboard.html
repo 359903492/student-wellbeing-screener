@@ -465,6 +465,31 @@
         <li>如果云端同步失败，本机密码仍生效；刷新页面后优先使用云端密码</li>
         <li>量表来源：PHQ-8（患者健康问卷-8）+ GAD-7（广泛性焦虑量表-7），均经过中国青少年群体信效度验证</li>
       </ul>
+
+      <h3 style="font-size:15px;color:#E65100;margin:20px 0 8px;">🖥 部署与维护</h3>
+
+      <h4 style="font-size:13px;color:#333;margin:12px 0 4px;">托管架构</h4>
+      <table style="font-size:13px;color:#555;">
+        <tr><td style="width:120px;font-weight:600;padding:4px 8px;">网页托管</td><td>Netlify（免费套餐）— 永久在线，无流量限制</td></tr>
+        <tr><td style="font-weight:600;padding:4px 8px;">数据存储</td><td>jsonblob.com（免费 JSON 存储）— 无需注册，通过 Netlify 代理访问</td></tr>
+        <tr><td style="font-weight:600;padding:4px 8px;">源代码</td><td>GitHub：<a href="https://github.com/359903492/student-wellbeing-screener" target="_blank">359903492/student-wellbeing-screener</a></td></tr>
+      </table>
+
+      <h4 style="font-size:13px;color:#333;margin:12px 0 4px;">⚠️ 数据保活提醒</h4>
+      <ul style="font-size:13px;color:#555;line-height:2;padding-left:20px;">
+        <li>jsonblob 是免费服务，如果<strong>超过 30 天没有任何访问</strong>，数据可能被自动清理</li>
+        <li><strong>保活方法</strong>：每隔两三周打开一次本仪表盘页面（就是现在这个页面），刷新一下数据即可</li>
+        <li>寒暑假前务必<strong>先点「💾 备份数据」下载 JSON 文件</strong>，以防假期无人访问导致数据丢失</li>
+        <li>恢复数据：如果 jsonblob 数据被清理，可联系开发者重新创建存储端点并导入备份</li>
+      </ul>
+
+      <h4 style="font-size:13px;color:#333;margin:12px 0 4px;">🔄 更新部署</h4>
+      <ul style="font-size:13px;color:#555;line-height:2;padding-left:20px;">
+        <li>修改代码后推送到 GitHub → 自动触发 Netlify 重新部署（需在 Netlify 中配置 Git 自动部署）</li>
+        <li>目前使用手动 zip 上传方式部署，如需改代码请联系开发者</li>
+        <li>Netlify 账号登录：<a href="https://app.netlify.com" target="_blank">app.netlify.com</a>（用 GitHub 账号登录）</li>
+        <li>Netlify 站点管理：<a href="https://app.netlify.com/sites/student-wellbeing-site" target="_blank">app.netlify.com/sites/student-wellbeing-site</a></li>
+      </ul>
     </div>
   </div>
 </body>
