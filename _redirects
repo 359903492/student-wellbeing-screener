@@ -1,0 +1,2 @@
+# Proxy all requests to /api to jsonblob (no CORS from browser's perspective)
+/api/*  https://jsonblob.com/api/jsonBlob/019efef7-f302-7eac-99c7-1574bbf68672  200!
