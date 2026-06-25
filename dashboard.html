@@ -73,8 +73,6 @@
     table { width: 100%; border-collapse: collapse; }
     th { text-align: left; padding: 10px 12px; font-size: 12px; color: #888; border-bottom: 2px solid #F0F0F0; }
     td { padding: 10px 12px; font-size: 14px; border-bottom: 1px solid #F5F5F5; }
-    tr.danger { background: #FFF5F5; }
-    tr.danger td:first-child::before { content: '⚠ '; }
 
     /* Buttons */
     .btn-row { display: flex; gap: 12px; margin-bottom: 20px; }
@@ -111,7 +109,9 @@
       </div>
       <div class="btn-row" style="margin-bottom:0;">
         <button class="btn btn-outline" onclick="refreshData()">刷新</button>
+        <button class="btn btn-outline" onclick="backupData()" style="margin-left:4px;">💾 备份数据</button>
         <button class="btn btn-primary" onclick="exportExcel()">导出 Excel</button>
+        <button class="btn btn-outline" onclick="changePassword()" style="margin-left:8px;">⚙ 修改密码</button>
       </div>
     </div>
 
@@ -128,14 +128,14 @@
 
     <!-- Student list -->
     <div class="list-section">
-      <h2>需关注学生名单（PHQ-9 ≥ 10 或 GAD-7 ≥ 10 或 Q9 自伤风险）</h2>
+      <h2>需关注学生名单（PHQ-8 ≥ 10 或 GAD-7 ≥ 10）</h2>
       <table id="student-table">
-        <thead><tr><th>学号</th><th>PHQ-9</th><th>PHQ-9 分级</th><th>GAD-7</th><th>GAD-7 分级</th><th>标记</th></tr></thead>
-        <tbody id="student-tbody"><tr><td colspan="6">加载中...</td></tr></tbody>
+        <thead><tr><th>学号</th><th>PHQ-8</th><th>PHQ-8 分级</th><th>GAD-7</th><th>GAD-7 分级</th></tr></thead>
+        <tbody id="student-tbody"><tr><td colspan="5">加载中...</td></tr></tbody>
       </table>
     </div>
 
-    <p class="disclaimer">本问卷为筛查工具，非临床诊断。PHQ-9 第 9 题得分 ≥ 1 的学生已标注为红色，建议立即跟进。</p>
+    <p class="disclaimer">本问卷为筛查工具，非临床诊断。PHQ-8 总分 ≥ 10 或 GAD-7 ≥ 10 的学生建议进一步评估。</p>
     <p class="refresh-time" id="refresh-time"></p>
   </div>
 
@@ -146,9 +146,23 @@
     // =========================================================================
 
     var API_URL = '/api';
-    var PASSWORD = '';
     var currentData = null;
     var autoRefreshTimer = null;
+
+    // -------------------------------------------------------------------------
+    // Password management (stored in localStorage, defaults to "123456")
+    // -------------------------------------------------------------------------
+
+    function getPassword() {
+      return localStorage.getItem('wellbeing_password') || '123456';
+    }
+
+    function changePassword() {
+      var newPw = prompt('请输入新密码（至少4位）：');
+      if (!newPw || newPw.length < 4) { alert('密码至少4位'); return; }
+      localStorage.setItem('wellbeing_password', newPw);
+      alert('密码已修改为：' + newPw);
+    }
 
     // -------------------------------------------------------------------------
     // Step 2: Password verification & data fetching
@@ -156,11 +170,10 @@
 
     function login() {
       var pw = document.getElementById('password-input').value;
-      if (pw !== '123456') {
+      if (pw !== getPassword()) {
         document.getElementById('login-error').style.display = 'block';
         return;
       }
-      PASSWORD = pw;
       document.getElementById('login-overlay').style.display = 'none';
       refreshData();
       startAutoRefresh();
@@ -196,28 +209,24 @@
           var list = subs.map(function(s) {
             var phq9_total = parseInt(s.phq9_total) || 0;
             var gad7_total = parseInt(s.gad7_total) || 0;
-            var phq9_q9 = parseInt(s.phq9_q9) || 0;
             return {
               studentId: s.studentId || '?',
               phq9: phq9_total,
               phq9_level: getPHQ9Label(phq9_total),
               gad7: gad7_total,
-              gad7_level: getGAD7Label(gad7_total),
-              danger: phq9_q9 >= 1
+              gad7_level: getGAD7Label(gad7_total)
             };
           });
 
           var levels = { good: 0, mild: 0, moderate: 0, severe: 0 };
-          var flagged = [];
           list.forEach(function(s) {
             if (s.phq9 <= 4 && s.gad7 <= 4) levels.good++;
             else if (s.phq9 <= 9 && s.gad7 <= 9) levels.mild++;
             else if (s.phq9 <= 14 && s.gad7 <= 14) levels.moderate++;
             else levels.severe++;
-            if (s.danger) flagged.push(s.studentId);
           });
 
-          currentData = { total: list.length, levels: levels, flagged: flagged, list: list };
+          currentData = { total: list.length, levels: levels, list: list };
           renderDashboard();
         })
         .catch(function() {
@@ -303,27 +312,24 @@
         }
       });
 
-      // ---- Concerned students table (PHQ-9 >= 10 or GAD-7 >= 10 or Q9 flagged) ----
+      // ---- Concerned students table (PHQ-8 >= 10 or GAD-7 >= 10) ----
       var concerned = (d.list || []).filter(function(s) {
-        return s.phq9 >= 10 || s.gad7 >= 10 || s.danger;
+        return s.phq9 >= 10 || s.gad7 >= 10;
       }).sort(function(a, b) {
         return (b.phq9 + b.gad7) - (a.phq9 + a.gad7);
       });
 
       var tbodyHTML = '';
       if (concerned.length === 0) {
-        tbodyHTML = '<tr><td colspan="6" style="text-align:center;color:#888;">没有需要特别关注的学生</td></tr>';
+        tbodyHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">没有需要特别关注的学生</td></tr>';
       } else {
         concerned.forEach(function(s) {
-          var dangerClass = s.danger ? ' class="danger"' : '';
-          var note = s.danger ? '⚠ 需立即关注' : '建议约谈';
-          tbodyHTML += '<tr' + dangerClass + '>' +
+          tbodyHTML += '<tr>' +
             '<td>' + esc(s.studentId) + '</td>' +
             '<td><strong>' + s.phq9 + '</strong></td>' +
             '<td>' + esc(s.phq9_level) + '</td>' +
             '<td><strong>' + s.gad7 + '</strong></td>' +
             '<td>' + esc(s.gad7_level) + '</td>' +
-            '<td>' + note + '</td>' +
             '</tr>';
         });
       }
@@ -343,7 +349,7 @@
       }
 
       // Build export data with headers
-      var exportData = [['学号', 'PHQ-9 总分', 'PHQ-9 分级', 'GAD-7 总分', 'GAD-7 分级', '安全标记']];
+      var exportData = [['学号', 'PHQ-8 总分', 'PHQ-8 分级', 'GAD-7 总分', 'GAD-7 分级']];
 
       currentData.list.forEach(function(s) {
         exportData.push([
@@ -351,19 +357,32 @@
           s.phq9,
           s.phq9_level,
           s.gad7,
-          s.gad7_level,
-          s.danger ? '是（第9题≥1）' : '否'
+          s.gad7_level
         ]);
       });
 
       var ws = XLSX.utils.aoa_to_sheet(exportData);
       ws['!cols'] = [
-        { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 18 }
+        { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 12 }, { wch: 18 }
       ];
 
       var wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '心理健康筛查');
       XLSX.writeFile(wb, '心理气象站_筛查报告_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    }
+
+    // -------------------------------------------------------------------------
+    // JSON backup download
+    // -------------------------------------------------------------------------
+
+    function backupData() {
+      fetchSubmissions().then(function(subs) {
+        var blob = new Blob([JSON.stringify(subs, null, 2)], {type: 'application/json'});
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'wellbeing-backup-' + new Date().toISOString().slice(0,10) + '.json';
+        a.click();
+      });
     }
   </script>
 </body>
