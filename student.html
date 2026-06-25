@@ -112,7 +112,7 @@
       </div>
       <div class="card">
         <h2>📋 知情同意</h2>
-        <p>亲爱的同学：这份问卷帮助老师了解大家在期末阶段的情绪状态。你的回答只有班主任可见，<strong>不会影响任何成绩</strong>。请根据最近两周的真实感受作答。如果填完后觉得心情不好，随时可以找老师聊聊。</p>
+        <p>亲爱的同学：这份问卷共 15 题，帮助老师了解大家在期末阶段的情绪状态。你的回答只有班主任可见，<strong>不会影响任何成绩</strong>。请根据最近两周的真实感受作答。如果填完后觉得心情不好，随时可以找老师聊聊。</p>
       </div>
       <div class="card">
         <div class="input-group">
@@ -133,7 +133,7 @@
 
     <!-- Screen 3: Result -->
     <div class="screen" id="screen-result">
-      <div class="header"><h1>☁️ 你的情绪温度</h1></div>
+      <div class="header"><h1>☁️ 提交成功</h1></div>
       <div id="result-content"></div>
       <p class="disclaimer">⚠ 本问卷为筛查工具，非临床诊断。<br>如果分数偏低，建议找班主任或学校心理老师聊聊。</p>
       <button class="btn btn-outline" id="btn-retry" style="margin-top:12px;" onclick="location.reload()">重新填写</button>
@@ -144,18 +144,17 @@
     // ========== 配置 ==========
     const API_URL = '/api';
 
-    // PHQ-9 + GAD-7 题目
+    // PHQ-8 + GAD-7 题目
     const QUESTIONS = {
       phq9: [
-        { id: 'phq9_1', text: '做事时提不起劲或没有兴趣', section: 'PHQ-9 情绪状态' },
-        { id: 'phq9_2', text: '感到心情低落、沮喪或绝望', section: 'PHQ-9 情绪状态' },
-        { id: 'phq9_3', text: '入睡困难、睡不安稳或睡得太多', section: 'PHQ-9 情绪状态' },
-        { id: 'phq9_4', text: '感觉疲倦或没有活力', section: 'PHQ-9 情绪状态' },
-        { id: 'phq9_5', text: '食欲不振或吃太多', section: 'PHQ-9 情绪状态' },
-        { id: 'phq9_6', text: '觉得自己很糟——或觉得自己很失败，或让自己或家人失望', section: 'PHQ-9 情绪状态' },
-        { id: 'phq9_7', text: '对事物专注有困难，例如阅读或看电视时', section: 'PHQ-9 情绪状态' },
-        { id: 'phq9_8', text: '动作或说话速度缓慢到别人已经觉察——或正好相反，烦躁或坐立不安、动来动去的情况更胜于平常', section: 'PHQ-9 情绪状态' },
-        { id: 'phq9_9', text: '有不如死掉或用某种方式伤害自己的念头', section: 'PHQ-9 情绪状态' },
+        { id: 'phq9_1', text: '做事时提不起劲或没有兴趣', section: 'PHQ-8 情绪状态' },
+        { id: 'phq9_2', text: '感到心情低落、沮喪或绝望', section: 'PHQ-8 情绪状态' },
+        { id: 'phq9_3', text: '入睡困难、睡不安稳或睡得太多', section: 'PHQ-8 情绪状态' },
+        { id: 'phq9_4', text: '感觉疲倦或没有活力', section: 'PHQ-8 情绪状态' },
+        { id: 'phq9_5', text: '食欲不振或吃太多', section: 'PHQ-8 情绪状态' },
+        { id: 'phq9_6', text: '觉得自己很糟——或觉得自己很失败，或让自己或家人失望', section: 'PHQ-8 情绪状态' },
+        { id: 'phq9_7', text: '对事物专注有困难，例如阅读或看电视时', section: 'PHQ-8 情绪状态' },
+        { id: 'phq9_8', text: '动作或说话速度缓慢到别人已经觉察——或正好相反，烦躁或坐立不安、动来动去的情况更胜于平常', section: 'PHQ-8 情绪状态' },
       ],
       gad7: [
         { id: 'gad7_1', text: '感觉紧张、焦虑或急切', section: 'GAD-7 焦虑状态' },
@@ -270,43 +269,11 @@
     }
 
     // ========== 结果展示 ==========
-    function showResult(phq9Total, phq9Level, gad7Total, gad7Level, phq9Q9Score) {
-      var maxPHQ9 = 27, maxGAD7 = 21;
-      var phq9Pct = Math.round((phq9Total / maxPHQ9) * 100);
-      var gad7Pct = Math.round((gad7Total / maxGAD7) * 100);
-
-      var html =
+    function showResult() {
+      document.getElementById('result-content').innerHTML =
         '<div class="card" style="text-align:center;">' +
-        '<h2>😌 抑郁情绪温度</h2>' +
-        '<div style="font-size:36px;font-weight:700;color:#333;margin:8px 0;">' + phq9Total + ' / ' + maxPHQ9 + '</div>' +
-        '<span class="level-badge ' + phq9Level.level + '">' + phq9Level.label + '</span>' +
-        '<div class="meter-bar"><div class="meter-fill ' + phq9Level.level + '" style="width:' + phq9Pct + '%"></div></div>' +
-        '</div>' +
-
-        '<div class="card" style="text-align:center;">' +
-        '<h2>😰 焦虑情绪温度</h2>' +
-        '<div style="font-size:36px;font-weight:700;color:#333;margin:8px 0;">' + gad7Total + ' / ' + maxGAD7 + '</div>' +
-        '<span class="level-badge ' + gad7Level.level + '">' + gad7Level.label + '</span>' +
-        '<div class="meter-bar"><div class="meter-fill ' + gad7Level.level + '" style="width:' + gad7Pct + '%"></div></div>' +
+        '<p style="font-size:18px;color:#333;line-height:1.8;">✅ 提交成功！感谢你的填写，老师已收到你的问卷。祝你期末顺利！</p>' +
         '</div>';
-
-      // Q9 safety check (regardless of total level)
-      if (phq9Q9Score >= 1) {
-        html += '<div class="card" style="background:#FFF5F5;border:2px solid #FFCDD2;text-align:center;">' +
-          '<p style="font-size:15px;color:#C62828;">💛 你的回答中有一项引起了我们的关注。</p>' +
-          '<p style="font-size:13px;color:#C62828;margin-top:8px;">请务必找班主任或学校心理老师聊一聊。你很重要，有人愿意帮你。</p>' +
-          '</div>';
-      }
-
-      // 如果有风险，显示额外提示
-      if (phq9Level.level === 'severe' || gad7Level.level === 'severe') {
-        html += '<div class="card" style="background:#FFF3E0;text-align:center;">' +
-          '<p style="font-size:15px;color:#E65100;">💛 你的分数显示你可能正在经历一些困难。</p>' +
-          '<p style="font-size:13px;color:#BF360C;margin-top:8px;">建议找班主任聊聊，或者联系学校心理老师。你不是一个人在面对这些。</p>' +
-          '</div>';
-      }
-
-      document.getElementById('result-content').innerHTML = html;
       showScreen('screen-result');
     }
 
@@ -318,22 +285,18 @@
       document.getElementById('btn-submit').disabled = true;
       document.getElementById('btn-submit').textContent = '提交中...';
 
-      var answers = collectAnswers();
-      var phq9_total = answers.phq9.reduce(function(a,b){return a+b;}, 0);
-      var gad7_total = answers.gad7.reduce(function(a,b){return a+b;}, 0);
+      var a = collectAnswers();
+      var phq9_total = a.phq9.reduce(function(a,b){return a+b;}, 0);
+      var gad7_total = a.gad7.reduce(function(a,b){return a+b;}, 0);
 
-      // 1. 立即显示结果（客户端计算）
-      showResult(phq9_total, getPHQ9Level(phq9_total),
-                 gad7_total, getGAD7Level(gad7_total),
-                 answers.phq9[8] || 0);
-      showScreen('screen-result');
+      // 显示提交成功页面
+      showResult();
 
-      // 2. 后台保存到 jsonblob
+      // 后台保存到 jsonblob
       var record = {
         timestamp: new Date().toISOString(),
         studentId: studentId,
         phq9_total: phq9_total,
-        phq9_q9: answers.phq9[8] || 0,
         gad7_total: gad7_total
       };
 
