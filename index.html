@@ -48,9 +48,8 @@
   <a href="student.html" class="btn-student">📝 开始填写问卷</a>
 </div>
 <script>
-var base = location.href.replace('index.html', '');
 document.getElementById('qr-img').src =
-  'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(base + 'student.html');
+  'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent('https://student-wellbeing-site.netlify.app/student.html');
 </script>
 </body>
 </html>
