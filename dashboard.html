@@ -210,13 +210,18 @@
     // Step 3: Overview cards & chart rendering
     // -------------------------------------------------------------------------
 
+    function esc(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     function renderDashboard() {
       var d = currentData;
-      document.getElementById('header-meta').textContent =
-        '已提交：' + d.total + ' 人  |  最后更新：' + new Date().toLocaleString('zh-CN');
-
-      var total = d.total || 1; // Prevent division by zero
+      if (!d || !d.levels) { return; }
+      var total = d.total || 1;
       var levels = d.levels;
+
+      document.getElementById('header-meta').textContent =
+        '已提交：' + total + ' 人  |  最后更新：' + new Date().toLocaleString('zh-CN');
 
       // ---- Overview cards ----
       document.getElementById('cards-container').innerHTML =
@@ -280,11 +285,11 @@
           var dangerClass = s.danger ? ' class="danger"' : '';
           var note = s.danger ? '⚠ 需立即关注' : '建议约谈';
           tbodyHTML += '<tr' + dangerClass + '>' +
-            '<td>' + s.studentId + '</td>' +
+            '<td>' + esc(s.studentId) + '</td>' +
             '<td><strong>' + s.phq9 + '</strong></td>' +
-            '<td>' + s.phq9_level + '</td>' +
+            '<td>' + esc(s.phq9_level) + '</td>' +
             '<td><strong>' + s.gad7 + '</strong></td>' +
-            '<td>' + s.gad7_level + '</td>' +
+            '<td>' + esc(s.gad7_level) + '</td>' +
             '<td>' + note + '</td>' +
             '</tr>';
         });
