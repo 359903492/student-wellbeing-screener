@@ -151,22 +151,54 @@
     var autoRefreshTimer = null;
 
     // -------------------------------------------------------------------------
-    // Password management (stored in localStorage, defaults to "123456")
+    // Password management (cloud-synced, localStorage as cache)
     // -------------------------------------------------------------------------
+
+    var _cachedData = null; // full API response cache
 
     function getPassword() {
       return localStorage.getItem('wellbeing_password') || '123456';
+    }
+
+    function fetchApi() {
+      return fetch(API_URL)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          _cachedData = data;
+          // Sync password from cloud to local
+          if (data.password) {
+            localStorage.setItem('wellbeing_password', data.password);
+          }
+          return data;
+        });
+    }
+
+    function fetchSubmissions() {
+      return fetchApi().then(function(data) { return data.submissions || []; });
+    }
+
+    function saveToCloud(password, submissions) {
+      return fetch(API_URL, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({password: password, submissions: submissions})
+      });
     }
 
     function changePassword() {
       var newPw = prompt('请输入新密码（至少4位）：');
       if (!newPw || newPw.length < 4) { alert('密码至少4位'); return; }
       localStorage.setItem('wellbeing_password', newPw);
-      alert('密码已修改为：' + newPw);
+      var subs = (_cachedData && _cachedData.submissions) || [];
+      saveToCloud(newPw, subs).then(function() {
+        alert('密码已修改为：' + newPw + '（已同步到云端）');
+      }).catch(function() {
+        alert('密码已在本机修改，但云端同步失败（下次刷新生效）');
+      });
     }
 
     // -------------------------------------------------------------------------
-    // Step 2: Password verification & data fetching
+    // Login & data fetching
     // -------------------------------------------------------------------------
 
     function login() {
@@ -176,14 +208,12 @@
         return;
       }
       document.getElementById('login-overlay').style.display = 'none';
+      // After login, sync password from cloud (updates localStorage on first use)
+      fetchApi().then(function() {
+        // Password sync done silently
+      }).catch(function(){});
       refreshData();
       startAutoRefresh();
-    }
-
-    function fetchSubmissions() {
-      return fetch(API_URL)
-        .then(function(r) { return r.json(); })
-        .then(function(data) { return data.submissions || []; });
     }
 
     // Enter key triggers login
@@ -387,23 +417,17 @@
     }
 
     function clearData() {
-      var confirm1 = confirm('⚠ 确定要清空所有数据吗？此操作不可恢复！');
+      var confirm1 = confirm('⚠ 确定要清空所有问卷数据吗？此操作不可恢复！');
       if (!confirm1) return;
-      var confirm2 = confirm('再次确认：删除全部 ' + (currentData ? currentData.total : '') + ' 条记录？');
+      var confirm2 = confirm('再次确认：删除全部 ' + (currentData ? currentData.total : '') + ' 条记录？密码不会被清空。');
       if (!confirm2) return;
 
-      fetch(API_URL, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({submissions: []})
-      }).then(function(r) { return r.json(); })
-        .then(function() {
-          alert('数据已清空');
-          refreshData();
-        })
-        .catch(function() {
-          alert('清空失败，请重试');
-        });
+      saveToCloud(getPassword(), []).then(function() {
+        alert('数据已清空（密码已保留）');
+        refreshData();
+      }).catch(function() {
+        alert('清空失败，请重试');
+      });
     }
   </script>
 
@@ -436,7 +460,8 @@
         <li>学生只填学号，不涉及真实姓名，结果仅供班主任查阅</li>
         <li>数据存储于免费云服务，建议<strong>每次使用后备份</strong>，以防数据丢失</li>
         <li>教师仪表盘密码默认为 <code>123456</code>，首次登录后请立即修改</li>
-        <li>更换设备后密码恢复为默认值（密码存储在浏览器本地）</li>
+        <li>修改密码后自动同步到云端，更换设备也能使用新密码</li>
+        <li>如果云端同步失败，本机密码仍生效；刷新页面后优先使用云端密码</li>
         <li>量表来源：PHQ-8（患者健康问卷-8）+ GAD-7（广泛性焦虑量表-7），均经过中国青少年群体信效度验证</li>
       </ul>
     </div>
