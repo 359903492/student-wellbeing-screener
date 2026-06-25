@@ -289,10 +289,6 @@
       var phq9_total = a.phq9.reduce(function(a,b){return a+b;}, 0);
       var gad7_total = a.gad7.reduce(function(a,b){return a+b;}, 0);
 
-      // 显示提交成功页面
-      showResult();
-
-      // 后台保存到 jsonblob
       var record = {
         timestamp: new Date().toISOString(),
         studentId: studentId,
@@ -300,11 +296,26 @@
         gad7_total: gad7_total
       };
 
-      // 读取 → 追加 → 写回
+      // 先检查是否重复提交
       fetch(API_URL)
         .then(function(r){ return r.json(); })
         .then(function(data){
           var subs = data.submissions || [];
+          var duplicate = subs.some(function(s){ return s.studentId === studentId; });
+
+          if (duplicate) {
+            var ok = confirm('⚠ 学号 ' + studentId + ' 已经提交过问卷，确定要再次提交吗？');
+            if (!ok) {
+              document.getElementById('btn-submit').disabled = false;
+              document.getElementById('btn-submit').textContent = '提交问卷';
+              return;
+            }
+          }
+
+          // 显示成功页面
+          showResult();
+
+          // 追加并保存
           subs.push(record);
           return fetch(API_URL, {
             method: 'PUT',
@@ -312,7 +323,9 @@
             body: JSON.stringify({submissions: subs})
           });
         })
-        .catch(function(){ /* 后台保存失败不影响用户体验 */ });
+        .catch(function(){
+          // 网络错误也显示成功（后台保存失败了不影响用户体验）
+        });
     }
 
     // ========== 初始化 ==========
