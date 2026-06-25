@@ -300,7 +300,7 @@
       showResult();
 
       // 读取 → 追加 → 写回
-      fetch(API_URL)
+      fetch(API_URL + '?_=' + Date.now())
         .then(function(r){ return r.json(); })
         .then(function(data){
           var subs = data.submissions || [];
@@ -322,7 +322,7 @@
 
     function checkDuplicate(studentId, callback) {
       // 检查学号是否已存在（使用正规化后的ID比较）
-      fetch(API_URL)
+      fetch(API_URL + '?_=' + Date.now())
         .then(function(r){ return r.json(); })
         .then(function(data){
           var subs = data.submissions || [];

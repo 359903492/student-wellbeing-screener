@@ -174,7 +174,7 @@
     }
 
     function fetchApi() {
-      return fetch(API_URL)
+      return fetch(API_URL + '?_=' + Date.now())
         .then(function(r) { return r.json(); })
         .then(function(data) {
           _cachedData = data;
