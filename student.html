@@ -270,7 +270,7 @@
     }
 
     // ========== 结果展示 ==========
-    function showResult(phq9Total, phq9Level, gad7Total, gad7Level) {
+    function showResult(phq9Total, phq9Level, gad7Total, gad7Level, phq9Q9Score) {
       var maxPHQ9 = 27, maxGAD7 = 21;
       var phq9Pct = Math.round((phq9Total / maxPHQ9) * 100);
       var gad7Pct = Math.round((gad7Total / maxGAD7) * 100);
@@ -289,6 +289,14 @@
         '<span class="level-badge ' + gad7Level.level + '">' + gad7Level.label + '</span>' +
         '<div class="meter-bar"><div class="meter-fill ' + gad7Level.level + '" style="width:' + gad7Pct + '%"></div></div>' +
         '</div>';
+
+      // Q9 safety check (regardless of total level)
+      if (phq9Q9Score >= 1) {
+        html += '<div class="card" style="background:#FFF5F5;border:2px solid #FFCDD2;text-align:center;">' +
+          '<p style="font-size:15px;color:#C62828;">💛 你的回答中有一项引起了我们的关注。</p>' +
+          '<p style="font-size:13px;color:#C62828;margin-top:8px;">请务必找班主任或学校心理老师聊一聊。你很重要，有人愿意帮你。</p>' +
+          '</div>';
+      }
 
       // 如果有风险，显示额外提示
       if (phq9Level.level === 'severe' || gad7Level.level === 'severe') {
@@ -325,7 +333,8 @@
       .then(function(data) {
         if (data.success) {
           showResult(data.phq9_total, getPHQ9Level(data.phq9_total),
-                     data.gad7_total, getGAD7Level(data.gad7_total));
+                     data.gad7_total, getGAD7Level(data.gad7_total),
+                     answers.phq9[8] || 0);
         } else {
           alert('提交失败，请重试');
           document.getElementById('btn-submit').disabled = false;
