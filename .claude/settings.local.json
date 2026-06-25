@@ -47,7 +47,27 @@
       "Read(//c/Program Files \\(x86\\)/LibreOffice/program/**)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(bash *)",
+      "Bash(curl *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "WebFetch(domain:gitee.com)",
+      "Bash(zip *)",
+      "Bash(surge *)",
+      "Bash(gh auth *)",
+      "Bash(tar -cf /tmp/deploy.tar student.html dashboard.html index.html)",
+      "Bash(netlify --version)",
+      "Bash(netlify deploy *)",
+      "Bash(NETLIFY_AUTH_TOKEN=\"nfp_wUQo4GUu27SmeU1MNj1dRRRc7wwSDYco0490\" netlify deploy *)",
+      "Bash(NETLIFY_AUTH_TOKEN=\"nfp_wUQo4GUu27SmeU1MNj1dRRRc7wwSDYco0490\" netlify link *)",
+      "Bash(NETLIFY_AUTH_TOKEN=\"nfp_wUQo4GUu27SmeU1MNj1dRRRc7wwSDYco0490\" netlify sites:list *)",
+      "Bash(NETLIFY_AUTH_TOKEN=\"nfp_wUQo4GUu27SmeU1MNj1dRRRc7wwSDYco0490\" netlify sites:create *)",
+      "Bash(tar -czf /tmp/netlify-deploy.tar.gz student.html dashboard.html index.html netlify.toml netlify/)",
+      "Read(//tmp/**)",
+      "Bash(tar -czf /tmp/deploy-v2.tar.gz student.html dashboard.html index.html)",
+      "Read(//d/tmp/**)",
+      "Read(//d//**)"
     ]
   }
 }

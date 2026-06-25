@@ -142,7 +142,7 @@
 
   <script>
     // ========== 配置 ==========
-    const API_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // 部署时替换
+    const API_URL = 'https://jsonblob.com/api/jsonBlob/019efef7-f302-7eac-99c7-1574bbf68672';
 
     // PHQ-9 + GAD-7 题目
     const QUESTIONS = {
@@ -319,33 +319,37 @@
       document.getElementById('btn-submit').textContent = '提交中...';
 
       var answers = collectAnswers();
+      var phq9_total = answers.phq9.reduce(function(a,b){return a+b;}, 0);
+      var gad7_total = answers.gad7.reduce(function(a,b){return a+b;}, 0);
 
-      fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'submit',
-          studentId: studentId,
-          phq9: answers.phq9,
-          gad7: answers.gad7
+      // 1. 立即显示结果（客户端计算）
+      showResult(phq9_total, getPHQ9Level(phq9_total),
+                 gad7_total, getGAD7Level(gad7_total),
+                 answers.phq9[8] || 0);
+      showScreen('screen-result');
+
+      // 2. 后台保存到 jsonblob
+      var record = {
+        timestamp: new Date().toISOString(),
+        studentId: studentId,
+        phq9_total: phq9_total,
+        phq9_q9: answers.phq9[8] || 0,
+        gad7_total: gad7_total
+      };
+
+      // 读取 → 追加 → 写回
+      fetch(API_URL)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var subs = data.submissions || [];
+          subs.push(record);
+          return fetch(API_URL, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({submissions: subs})
+          });
         })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success) {
-          showResult(data.phq9_total, getPHQ9Level(data.phq9_total),
-                     data.gad7_total, getGAD7Level(data.gad7_total),
-                     answers.phq9[8] || 0);
-        } else {
-          alert('提交失败，请重试');
-          document.getElementById('btn-submit').disabled = false;
-          document.getElementById('btn-submit').textContent = '提交问卷';
-        }
-      })
-      .catch(function() {
-        alert('网络错误，请检查网络后重试');
-        document.getElementById('btn-submit').disabled = false;
-        document.getElementById('btn-submit').textContent = '提交问卷';
-      });
+        .catch(function(){ /* 后台保存失败不影响用户体验 */ });
     }
 
     // ========== 初始化 ==========

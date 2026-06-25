@@ -145,7 +145,7 @@
     //         Concerned Students Table, Auto-refresh, Excel Export
     // =========================================================================
 
-    var API_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // Replace on deployment
+    var API_URL = 'https://jsonblob.com/api/jsonBlob/019efef7-f302-7eac-99c7-1574bbf68672';
     var PASSWORD = '';
     var currentData = null;
     var autoRefreshTimer = null;
@@ -155,25 +155,21 @@
     // -------------------------------------------------------------------------
 
     function login() {
-      PASSWORD = document.getElementById('password-input').value;
-      document.getElementById('login-error').style.display = 'none';
+      var pw = document.getElementById('password-input').value;
+      if (pw !== '123456') {
+        document.getElementById('login-error').style.display = 'block';
+        return;
+      }
+      PASSWORD = pw;
+      document.getElementById('login-overlay').style.display = 'none';
+      refreshData();
+      startAutoRefresh();
+    }
 
-      fetch(API_URL + '?action=stats&password=' + encodeURIComponent(PASSWORD))
+    function fetchSubmissions() {
+      return fetch(API_URL)
         .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data.error) {
-            document.getElementById('login-error').style.display = 'block';
-          } else {
-            document.getElementById('login-overlay').style.display = 'none';
-            currentData = data;
-            renderDashboard();
-            startAutoRefresh();
-          }
-        })
-        .catch(function() {
-          document.getElementById('login-error').textContent = '网络错误，请重试';
-          document.getElementById('login-error').style.display = 'block';
-        });
+        .then(function(data) { return data.submissions || []; });
     }
 
     // Enter key triggers login
@@ -193,17 +189,54 @@
     }
 
     function refreshData() {
-      fetch(API_URL + '?action=stats&password=' + encodeURIComponent(PASSWORD))
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data.error) {
-            currentData = data;
-            renderDashboard();
-          }
+      fetchSubmissions()
+        .then(function(subs) {
+          if (!Array.isArray(subs)) return;
+
+          var list = subs.map(function(s) {
+            var phq9_total = parseInt(s.phq9_total) || 0;
+            var gad7_total = parseInt(s.gad7_total) || 0;
+            var phq9_q9 = parseInt(s.phq9_q9) || 0;
+            return {
+              studentId: s.studentId || '?',
+              phq9: phq9_total,
+              phq9_level: getPHQ9Label(phq9_total),
+              gad7: gad7_total,
+              gad7_level: getGAD7Label(gad7_total),
+              danger: phq9_q9 >= 1
+            };
+          });
+
+          var levels = { good: 0, mild: 0, moderate: 0, severe: 0 };
+          var flagged = [];
+          list.forEach(function(s) {
+            if (s.phq9 <= 4 && s.gad7 <= 4) levels.good++;
+            else if (s.phq9 <= 9 && s.gad7 <= 9) levels.mild++;
+            else if (s.phq9 <= 14 && s.gad7 <= 14) levels.moderate++;
+            else levels.severe++;
+            if (s.danger) flagged.push(s.studentId);
+          });
+
+          currentData = { total: list.length, levels: levels, flagged: flagged, list: list };
+          renderDashboard();
         })
         .catch(function() {
-          // Silently fail on auto-refresh; keep showing last data
+          // Silently fail on auto-refresh
         });
+    }
+
+    function getPHQ9Label(s) {
+      if (s <= 4) return '🟢 正常范围';
+      if (s <= 9) return '🟡 轻度抑郁倾向';
+      if (s <= 14) return '🟠 中度抑郁倾向';
+      if (s <= 19) return '🔴 中重度抑郁倾向';
+      return '🔴 重度抑郁倾向';
+    }
+    function getGAD7Label(s) {
+      if (s <= 4) return '🟢 正常范围';
+      if (s <= 9) return '🟡 轻度焦虑';
+      if (s <= 14) return '🟠 中度焦虑';
+      return '🔴 重度焦虑';
     }
 
     // -------------------------------------------------------------------------
