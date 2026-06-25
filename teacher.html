@@ -46,9 +46,8 @@
   <a href="dashboard.html" class="btn-teacher">📊 进入教师仪表盘</a>
 </div>
 <script>
-var base = location.href.replace('teacher.html', '');
 document.getElementById('qr-img').src =
-  'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(base + 'dashboard.html');
+  'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent('https://student-wellbeing-site.netlify.app/dashboard.html');
 </script>
 </body>
 </html>
