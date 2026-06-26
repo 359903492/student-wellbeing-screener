@@ -1,11 +1,31 @@
 # Dependencies
 node_modules/
 
-# SDD artifacts (should not be deployed)
+# SDD artifacts
 .superpowers/
 
-# Local Netlify folder
-.netlify
+# Local config (contains tokens)
+.claude/
 
-# Sensitive tokens (do not commit)
-TOKENS.txt
+# Build scripts and temp files
+create_ais31_*.js
+create_ais31_*.py
+create_rng_ppt.js
+convert_to_docx.py
+
+# Unrelated project files
+AIS31_*
+AIS_31_*
+ais31_*
+AI学习笔记.*
+Word_*
+*.docx
+*.pptx
+*.xlsx
+*.pdf
+修改后文档.md
+新建 Microsoft Word 文档.docx
+随机数生成器_RNG_全面解析.pptx
+package.json
+package-lock.json
+docs/
